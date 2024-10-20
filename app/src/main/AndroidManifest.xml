@@ -20,12 +20,25 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DNSLock"
         tools:targetApi="31">
+
+        <service
+            android:name=".WifiTileService"
+            android:exported="true"
+            android:label="Wi-Fi Toggle"
+            android:icon="@drawable/baseline_wifi_24"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES"/>
             </intent-filter>
         </activity>
 
