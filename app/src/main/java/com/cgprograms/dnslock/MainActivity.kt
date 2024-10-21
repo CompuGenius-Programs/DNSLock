@@ -70,7 +70,35 @@ class MainActivity : Activity() {
             wifiManager.enableNetwork(netId, true)
         }
 
-        // Toggle Wi-Fi on/off
+        addButton.setOnClickListener {
+            val selectedSSID = ssid.text.toString()
+            val scanResult = wifiManager.scanResults.find { it.SSID == selectedSSID }
+
+            if (scanResult != null) {
+                val isOpenNetwork = getSecurityType(scanResult) == "Open"
+
+                val wifiConfig = WifiConfiguration().apply {
+                    SSID = "\"$selectedSSID\""
+                    if (isOpenNetwork) {
+                        allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE)
+                    } else {
+                        preSharedKey = "\"${password.text}\""
+                    }
+                }
+
+                val netId = wifiManager.addNetwork(wifiConfig)
+                if (netId != -1) {
+                    wifiManager.enableNetwork(netId, true)
+                    Toast.makeText(this, "Connected to $selectedSSID", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "Failed to connect to $selectedSSID", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "SSID not found in scan results", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+
         toggleWifiButton.setOnClickListener {
             val status = !wifiManager.isWifiEnabled
             wifiManager.isWifiEnabled = status
