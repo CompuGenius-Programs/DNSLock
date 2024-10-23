@@ -20,6 +20,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 
+@SuppressLint("MissingPermission")
 class MainActivity : Activity() {
     private lateinit var devicePolicyManager: DevicePolicyManager
     private lateinit var compName: ComponentName
@@ -73,8 +74,13 @@ class MainActivity : Activity() {
         addButton.setOnClickListener {
             val selectedSSID = ssid.text.toString()
             val scanResult = wifiManager.scanResults.find { it.SSID == selectedSSID }
+            val configuredNetwork =
+                wifiManager.configuredNetworks.find { it.SSID == "\"$selectedSSID\"" }
 
-            if (scanResult != null) {
+            if (configuredNetwork != null) {
+                wifiManager.enableNetwork(configuredNetwork.networkId, true)
+                Toast.makeText(this, "Switched to $selectedSSID", Toast.LENGTH_SHORT).show()
+            } else if (scanResult != null) {
                 val isOpenNetwork = getSecurityType(scanResult) == "Open"
 
                 val wifiConfig = WifiConfiguration().apply {
@@ -91,7 +97,8 @@ class MainActivity : Activity() {
                     wifiManager.enableNetwork(netId, true)
                     Toast.makeText(this, "Connected to $selectedSSID", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(this, "Failed to connect to $selectedSSID", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Failed to connect to $selectedSSID", Toast.LENGTH_SHORT)
+                        .show()
                 }
             } else {
                 Toast.makeText(this, "SSID not found in scan results", Toast.LENGTH_SHORT).show()
@@ -110,7 +117,6 @@ class MainActivity : Activity() {
     private fun showAvailableSSIDs() {
         wifiManager.setWifiEnabled(true)
 
-        // Show loading dialog before starting the scan
         showLoadingDialog()
 
         val wifiScanReceiver = object : BroadcastReceiver() {
@@ -121,7 +127,6 @@ class MainActivity : Activity() {
                 } else {
                     Log.d("MainActivity", "WiFi Scan failed")
                 }
-                // Dismiss the loading dialog once scan results are ready
                 dismissLoadingDialog()
                 unregisterReceiver(this)
             }
@@ -134,17 +139,22 @@ class MainActivity : Activity() {
         val success = wifiManager.startScan()
         if (!success) {
             Log.d("MainActivity", "WiFi Scan initiation failed")
-            dismissLoadingDialog() // Dismiss loading dialog in case of failure
+            dismissLoadingDialog()
         }
     }
 
-    @SuppressLint("MissingPermission")
     private fun displaySSIDDialog() {
         val scanResults = wifiManager.scanResults
-        val ssidList = scanResults.filter { it.SSID.isNotEmpty() }.sortedByDescending { it.level }
-            .map { it to getSecurityType(it) }
-            .map { "${it.first.SSID} (${it.second})" }  // Display SSID and security type
-            .toSet().toList()
+        val configuredNetworks = wifiManager.configuredNetworks
+
+        val ssidList =
+            scanResults.asSequence().filter { it.SSID.isNotEmpty() }.sortedByDescending { it.level }
+                .map { scanResult ->
+                    val isKnown = configuredNetworks.any { it.SSID == "\"${scanResult.SSID}\"" }
+                    val securityType = getSecurityType(scanResult)
+                    val indicator = if (isKnown) "Known" else "Unknown"
+                    "${scanResult.SSID} ($securityType) - $indicator"
+                }.toSet().toList()
 
         var dialog: AlertDialog? = null
         val builder = AlertDialog.Builder(this)
@@ -152,7 +162,7 @@ class MainActivity : Activity() {
 
         val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, ssidList)
         builder.setAdapter(adapter) { _, which ->
-            val selectedSSID = ssidList[which].split(" (")[0]  // Extract the SSID
+            val selectedSSID = ssidList[which].split(" (")[0]
             ssid.setText(selectedSSID)
             dialog?.dismiss()
             password.requestFocus()
@@ -162,18 +172,16 @@ class MainActivity : Activity() {
         dialog = builder.show()
     }
 
-    // Function to determine the security type of the Wi-Fi network
     private fun getSecurityType(scanResult: ScanResult): String {
         val capabilities = scanResult.capabilities
         return when {
             capabilities.contains("WEP") -> "WEP"
             capabilities.contains("WPA") -> "WPA/WPA2"
             capabilities.contains("SAE") -> "WPA3"
-            else -> "Open"  // No security
+            else -> "Open"
         }
     }
 
-    // Show a loading dialog with a progress bar
     private fun showLoadingDialog() {
         if (loadingDialog == null) {
             val builder = AlertDialog.Builder(this)
@@ -186,7 +194,6 @@ class MainActivity : Activity() {
         loadingDialog?.show()
     }
 
-    // Dismiss the loading dialog
     private fun dismissLoadingDialog() {
         loadingDialog?.dismiss()
     }
