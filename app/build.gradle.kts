@@ -11,8 +11,8 @@ android {
         applicationId = "com.cgprograms.dnslock"
         minSdk = 29
         targetSdk = 34
-        versionCode = 5
-        versionName = "3.1.0"
+        versionCode = 6
+        versionName = "4.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

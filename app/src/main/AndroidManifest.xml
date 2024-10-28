@@ -9,6 +9,7 @@
     <uses-permission android:name="android.permission.MANAGE_DEVICE_ADMINS" />
     <uses-permission android:name="android.permission.BIND_DEVICE_ADMIN" />
     <uses-permission android:name="android.permission.MANAGE_PROFILE_AND_DEVICE_OWNERS" />
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"/>
 
     <application
         android:allowBackup="true"
@@ -24,8 +25,8 @@
         <service
             android:name=".WifiTileService"
             android:exported="true"
-            android:label="Wi-Fi Toggle"
             android:icon="@drawable/baseline_wifi_24"
+            android:label="Wi-Fi Toggle"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
@@ -38,13 +39,13 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
-                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES"/>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
             </intent-filter>
         </activity>
 
         <receiver
             android:name=".MyDeviceAdminReceiver"
-            android:exported="true"
+            android:exported="false"
             android:permission="android.permission.BIND_DEVICE_ADMIN">
             <meta-data
                 android:name="android.app.device_admin"
@@ -53,6 +54,10 @@
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
             </intent-filter>
         </receiver>
+
+        <service
+            android:name=".TorMonitorService"
+            android:exported="false" />
 
     </application>
 
